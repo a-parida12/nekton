@@ -1,111 +1,123 @@
 name: Python Application Testing
 
 on: [push]
-    
+
+permissions:
+  contents: read
+
 jobs:
-   build-test:
+  build-test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.9"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry && poetry build
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
 
-   code-quality:
+      - name: Set up Python
+        uses: actions/setup-python@v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+
+      - name: Build package
+        run: poetry build
+
+  code-quality:
     needs: build-test
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.9"
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry && poetry install
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
 
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    
-    - name: Security Analysis with bandit
-      run: |
-        mkdir ci-logs
-        poetry run bandit -r -lll  -f txt -o ci-logs/bandit.log ./nekton ./tests
-        
-    - name: Archive bandit report
-      uses: actions/upload-artifact@v2
-      with:
-        name: bandit-report
-        path: ci-logs/bandit.log
+      - name: Set up Python
+        uses: actions/setup-python@v6.3.0
+        with:
+          python-version: "3.12"
 
-   code-coverage-369:
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry install
+
+      - name: Lint with flake8
+        run: |
+          poetry run flake8 nekton tests --exclude=nekton/externals --count --select=E9,F63,F7,F82 --show-source --statistics
+          poetry run flake8 nekton tests --exclude=nekton/externals --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Security analysis with bandit
+        run: |
+          mkdir ci-logs
+          poetry run bandit -r -lll -x ./nekton/externals -f txt -o ci-logs/bandit.log ./nekton ./tests
+
+      - name: Archive bandit report
+        uses: actions/upload-artifact@v7
+        with:
+          name: bandit-report
+          path: ci-logs/bandit.log
+
+  code-coverage:
     needs: code-quality
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.9"
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry && poetry install
-    - name: Submodules Setup
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
 
-    - name: Test with pytest
-      run: |
-        poetry install
-        poetry run pytest tests/  --cov-report=xml --cov=nekton --junitxml=./coverage.xml
+      - name: Set up Python
+        uses: actions/setup-python@v6.3.0
+        with:
+          python-version: "3.12"
 
-    - name: Code Coverage Summary Report
-      run: |
-       pip install coverage
-       coverage combine && coverage report --fail-under=90 -m
-       coverage html 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry install
 
-    - name: Archive code coverage html report
-      uses: actions/upload-artifact@v2
-      with:
-        name: code-coverage-report
-        path: htmlcov/index.html
+      - name: Test with coverage
+        run: |
+          poetry run pytest tests/ --cov-report=xml --cov=nekton --junitxml=./coverage.xml
+          poetry run coverage report --fail-under=90 -m
+          poetry run coverage html
 
-   test-39:
+      - name: Archive code coverage html report
+        uses: actions/upload-artifact@v7
+        with:
+          name: code-coverage-report
+          path: htmlcov/index.html
+
+  test-312:
     needs: code-quality
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.9"
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry && poetry install
-    - name: Submodules Setup
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
 
-    - name: Test with pytest
-      run: |
-        poetry install
-        poetry run pytest tests/  --cov-report=xml --cov=nekton --junitxml=./coverage.xml
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry install
+
+      - name: Test with pytest
+        run: poetry run pytest tests/ --cov-report=xml --cov=nekton --junitxml=./coverage.xml

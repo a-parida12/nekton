@@ -1,85 +1,78 @@
-name: Test and Release 
+name: Test and Release
+
 on:
   push:
-    branches: [ master ]
+    branches: [master]
 
+permissions:
+  contents: read
 
 jobs:
-  Quality:
+  quality:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-      with:
-        python-version: "3.9"
 
-    - name: Configure poetry & Install dependencies
-      run: |
-       python -m pip install --upgrade pip
-       pip install poetry && poetry install
-    
-    - name: View poetry version
-      run: poetry --version
-    
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    
-    - name: Security Analysis with bandit
-      run: |
-        # stop pipeline if level 3 vulnerability found
-        poetry run bandit -r -lll ./nekton ./tests
-    - name: Submodules Setup
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: Test with pytest
-      run: |
-        poetry run python -m pytest -v tests
-    
-  Release:
-    needs: Quality
-    # https://github.community/t/how-do-i-specify-job-dependency-running-in-another-workflow/16482
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry install
+
+      - name: View Poetry version
+        run: poetry --version
+
+      - name: Lint with flake8
+        run: |
+          poetry run flake8 nekton tests --exclude=nekton/externals --count --select=E9,F63,F7,F82 --show-source --statistics
+          poetry run flake8 nekton tests --exclude=nekton/externals --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Security analysis with bandit
+        run: poetry run bandit -r -lll -x ./nekton/externals ./nekton ./tests
+
+      - name: Test with pytest
+        run: poetry run python -m pytest -v tests
+
+  release:
+    needs: quality
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'chore(release):')
     runs-on: ubuntu-latest
     concurrency: release
     permissions:
       id-token: write
       contents: write
+
     steps:
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Submodules Setup
-        uses: actions/checkout@v2
-        with:
           submodules: recursive
-      # This action uses Python Semantic Release v8
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.3.0
+        with:
+          python-version: "3.12"
+
       - name: Python Semantic Release
         id: release
-        uses: python-semantic-release/python-semantic-release@master
+        uses: python-semantic-release/python-semantic-release@v10.5.3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          root_options: '-vv'
-  
-      - name: Publish package distributions to PyPI 
-        uses: pypa/gh-action-pypi-publish@release/v1
-        # NOTE: DO NOT wrap the conditional in ${{ }} as it will always evaluate to true.
-        # See https://github.com/actions/runner/issues/1173
-        if: steps.release.outputs.released == 'true'
-  
-      - name: Publish package distributions to GitHub Releases
-        uses: python-semantic-release/upload-to-gh-release@main
-        if: steps.release.outputs.released == 'true'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
- 
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          verbosity: "2"
 
-      
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.14.0
+        if: steps.release.outputs.released == 'true'
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}

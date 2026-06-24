@@ -4,25 +4,25 @@ version = "0.2.6"
 description = "A python package for DICOM to NifTi and NifTi to DICOM-SEG and GSPS conversion"
 authors = ["a-parida12 <abhijeet@deepc.ai>"]
 license = "MIT"
-repository = 'https://github.com/deepc-health/nekton'
+repository = 'https://github.com/a-parida12/nekton'
 readme = 'README.md'
 keywords = ["dicom", "medical-imaging", "nifti",  "dicom-seg", "gsps"]
 
 [tool.poetry.dependencies]
-python = "^3.6.9"
-nibabel = "^3.2.2"
-pydicom = "^2.3.0"
-numpy = "^1.19.5"
-pydicom-seg = "0.3.0"
-SimpleITK = "^2.1.1"
+python = "^3.12"
+nibabel = "^5.4.2"
+pydicom = "^2.4.4"
+numpy = "^1.26.4"
+pydicom-seg = "^0.4.1"
+SimpleITK = "^2.5.5"
 
 
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-flake8 = "^4.0.1"
-pytest-cov = "^3.0.0"
-commitizen = "^2.20.3"
-bandit = "^1.7.1"
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.1.1"
+flake8 = "^7.3.0"
+pytest-cov = "^7.1.0"
+commitizen = "^4.16.4"
+bandit = "^1.9.4"
 
 
 [build-system]

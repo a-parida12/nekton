@@ -1,21 +1,56 @@
 # Nekton
-[![Python Application Testing](https://github.com/deepc-health/nekton/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/deepc-health/nekton/actions/workflows/tests.yml)[![Test and Release](https://github.com/deepc-health/nekton/actions/workflows/release.yml/badge.svg?branch=master)](https://github.com/deepc-health/nekton/actions/workflows/release.yml)
-[![Python Versions](https://img.shields.io/pypi/pyversions/nekton.svg)](https://pypi.org/project/nekton/)[![Package version](https://img.shields.io/pypi/v/nekton?color=%2334D058&label=pypi%20package)](https://pypi.org/project/nekton/)
+
+[![Python Application Testing](https://github.com/deepc-health/nekton/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/deepc-health/nekton/actions/workflows/tests.yml)
+[![Test and Release](https://github.com/deepc-health/nekton/actions/workflows/release.yml/badge.svg?branch=master)](https://github.com/deepc-health/nekton/actions/workflows/release.yml)
+[![Python Versions](https://img.shields.io/pypi/pyversions/nekton.svg)](https://pypi.org/project/nekton/)
+[![Package version](https://img.shields.io/pypi/v/nekton?color=%2334D058&label=pypi%20package)](https://pypi.org/project/nekton/)
 
 > A python package for DICOM to NifTi and NifTi to DICOM-SEG and GSPS conversion
 
-## SETUP
+## Setup
 
-The python package is available for use on PyPI. It can be setup simply via pip
+Nekton supports Python 3.12. The package is available on PyPI and can be installed with pip:
 
 ```bash
 pip install nekton
 ```
 
-To the check the setup, simply check the version number of the `nekton` package by
+To check the installation, print the installed package version:
 
 ```bash
 python -c 'import nekton; print(nekton.__version__)'
+```
+
+## Development
+
+This repository uses Poetry for dependency management. The DICOM-SEG validation schemas are stored in the `nekton/externals/dcmqi` git submodule, so clone with submodules or initialize them after cloning:
+
+```bash
+git clone --recurse-submodules git@github.com:deepc-health/nekton.git
+cd nekton
+```
+
+If the repository is already cloned:
+
+```bash
+git submodule update --init --recursive
+```
+
+Install dependencies and run the test suite:
+
+```bash
+poetry install
+poetry run pytest -c tests/pytest.ini tests
+```
+
+The GitHub workflows run on Python 3.12 and also check build, lint, security scanning, and coverage:
+
+```bash
+poetry build
+poetry run flake8 nekton tests --exclude=nekton/externals --count --select=E9,F63,F7,F82 --show-source --statistics
+poetry run bandit -r -lll -x ./nekton/externals ./nekton ./tests
+poetry run pytest tests/ --cov-report=xml --cov=nekton --junitxml=./coverage.xml
+poetry run coverage report --fail-under=90 -m
 ```
 
 ## DICOM to NifTi
