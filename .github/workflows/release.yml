@@ -43,36 +43,46 @@ jobs:
         run: poetry run python -m pytest -v tests
 
   release:
-    needs: quality
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'chore(release):')
-    runs-on: ubuntu-latest
-    concurrency: release
-    permissions:
-      id-token: write
-      contents: write
+  needs: quality
+  if: github.event_name == 'push' && github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, 'chore(release):')
+  runs-on: ubuntu-latest
+  concurrency: release
+  permissions:
+    id-token: write
+    contents: write
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          submodules: recursive
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: recursive
+        token: ${{ secrets.GIT_TOKEN }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v6.3.0
-        with:
-          python-version: "3.12"
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
 
-      - name: Python Semantic Release
-        id: release
-        uses: python-semantic-release/python-semantic-release@v10.5.3
-        with:
-          PYPI_TOKEN: ${{ secrets.GIT_TOKEN }}
-          verbosity: "2"
+    - name: Configure git for semantic-release
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git remote set-url origin https://x-access-token:${{ secrets.GIT_TOKEN }}@github.com/${{ github.repository }}
 
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.14.0
-        if: steps.release.outputs.released == 'true'
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+    - name: Python Semantic Release
+      id: release
+      uses: python-semantic-release/python-semantic-release@v10.5.3
+      env:
+        GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+      with:
+        github_token: ${{ secrets.GIT_TOKEN }}
+        verbosity: "2"
+
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@v1.14.0
+      if: steps.release.outputs.released == 'true'
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_SECRET }}
+      
