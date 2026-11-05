@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.0rc1 (2026-11-05)
+### Release candidate
+* Prepared the 0.3.0 release candidate.
+
 ## v0.2.4 (2022-04-13)
 ### Fix
 * **nii2dcm:** Fixed check for the number of dicom ([#21](https://github.com/deepc-health/nekton/issues/21)) ([`c3ec65d`](https://github.com/deepc-health/nekton/commit/c3ec65d9c2ee61709a4fd8ed80a2fb7d7cf43fcf))
